@@ -10,8 +10,8 @@ m2r = "*"
 sphinx = "*"
 
 [packages]
-easyjwt = "*"
-flask = "*"
+easyjwt = "~=0.1"
+flask = "~=1.0"
 
 [requires]
-python_version = "3.7"
+python_version = "3.6"
