@@ -16,7 +16,9 @@
 """
 
 from .flask_easyjwt import FlaskEasyJWT
+from .token import Token
 
 __all__ = [
     'FlaskEasyJWT',
+    'Token',
 ]

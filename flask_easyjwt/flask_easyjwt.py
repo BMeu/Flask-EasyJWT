@@ -14,7 +14,6 @@ from warnings import warn
 from flask import current_app
 from flask import Flask
 
-
 _CONFIGURATION_KEY = 'EASYJWT_KEY'
 """
     The name of the configuration key for the encryption key.
