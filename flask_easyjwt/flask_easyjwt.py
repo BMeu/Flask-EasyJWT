@@ -2,64 +2,144 @@
 # -*- coding: utf-8 -*-
 
 """
-    Definition of the actual Flask extension.
+    Definition of the token base class for use in Flask applications.
 """
 
+from typing import Iterable
 from typing import Optional
+from typing import Type
+from typing import Union
 
 from datetime import datetime
 from datetime import timedelta
 from warnings import warn
 
+from easyjwt import EasyJWT
+from easyjwt import EasyJWTClass
 from flask import current_app
-from flask import Flask
-
-_CONFIGURATION_KEY = 'EASYJWT_KEY'
-"""
-    The name of the configuration key for the encryption key.
-"""
-
-_CONFIGURATION_TOKEN_VALIDITY = 'EASYJWT_TOKEN_VALIDITY'
-"""
-    The name of the configuration key for the token's validity.
-"""
 
 
-class FlaskEasyJWT(object):
+class FlaskEasyJWT(EasyJWT):
     """
-        The extension class for the usage of `EasyJWT` with `Flask`.
+        The base class for representing JSON Web Tokens (JWT).
 
-        You can either initialize this extension by passing your `Flask` application instance to the constructor, or
-        by passing it to :meth:`.init_app` in a factory method.
+        To use a JWT, you have to create a subclass inheriting from :class:`FlaskEasyJWT`. All public instance variables
+        of this class (that is, all instance variables not starting with an underscore) will make up the claim set of
+        your token (there will be a few meta claims in the token as well that :class:`FlaskEasyJWT` needs to verify the
+        token). For details, see the documentation of `EasyJWT <https://easyjwt.readthedocs.io/en/latest/>`_.
+
+        :class:`FlaskEasyJWT` simplifies the usage of `EasyJWT` in Flask applications by allowing to specify a few
+        common settings in the application's configuration:
+
+        * The key used for encoding and decoding a token can be specified in the configuration key `EASYJWT_KEY`.
+        * The validity of a token can be specified in the configuration key `EASYJWT_TOKEN_VALIDITY`. The expiration
+          date will be set at the time of creation of a token to the current time plus the specified duration (in
+          seconds).
     """
 
-    # region Attributes & Properties
+    # region Initialization
 
-    @property
-    def _application(self) -> Flask:
+    def __init__(self, key: Optional[str] = None) -> None:
         """
-            Get the Flask application to be used for accessing the configuration.
-
-            :return: If set, the application with which this extension has been initialized in the constructor.
-                     Otherwise, the current application.
+            :param key: If set, the given string will be used to encrypt tokens when they are created. If not given,
+                        the key defined in the application's configuration will be used. Defaults to `None`.
         """
 
-        if self._explicit_application is not None:
-            return self._explicit_application
+        if key is None:
+            key = self._get_config_key()
 
-        return current_app
+        # Perform the default initialization with the chosen key.
+        super().__init__(key)
 
-    @property
-    def expiration_date(self) -> Optional[datetime]:
+    # endregion
+
+    # region Creation
+
+    def create(self, issued_at: Optional[datetime] = None) -> str:
         """
-            Get the expiration date, based on the tokens' validity defined in the application's configuration.
+            Create the actual token from the :class:`EasyJWT` object. Empty optional claims will not be included in the
+            token. Empty non-optional claims will cause a :class:`MissingRequiredClaimsError`.
 
-            :return: None if no token validity is defined in the application's configuration or if the value has a wrong
-                     type. A `datetime` object otherwise, in UTC and the defined amount of time from now.
+            :param issued_at: The date and time at which this token was issued. If not given, the current date and time
+                              will be used. Must be given in UTC. Defaults to `None`.
+            :return: The token represented by the current state of the object.
+            :raise IncompatibleKeyError: If the given key is incompatible with the algorithm used for encoding the
+                                         token.
+            :raise MissingRequiredClaimsError: If instance variables that map to non-optional claims in the claim set
+                                               are empty.
+        """
+
+        # If the expiration date is not set, set it from the application's configuration.
+        if self.expiration_date is None:
+            self.expiration_date = self._get_config_expiration_date()
+
+        return super().create(issued_at)
+
+    # endregion
+
+    # region Verification
+
+    @classmethod
+    def verify(cls: Type['FlaskEasyJWT'],
+               token: str,
+               key: Optional[str] = None,
+               issuer: Optional[str] = None,
+               audience: Optional[Union[Iterable[str], str]] = None
+               ) -> EasyJWTClass:
+        """
+            Verify the given JSON Web Token.
+
+            :param token: The JWT to verify.
+            :param key: The key used for decoding the token. This key must be the same with which the token has been
+                        created.
+            :param issuer: The issuer of the token to verify.
+            :param audience: The audience for which the token is intended.
+            :return: The object representing the token. The claim values are set on the corresponding instance
+                     variables.
+            :raise ExpiredTokenError: If the claim set contains an expiration date claim ``exp`` that has passed.
+            :raise ImmatureTokenError: If the claim set contains a not-before date claim ``nbf`` that has not yet been
+                                       reached.
+            :raise IncompatibleKeyError: If the given key is incompatible with the algorithm used for decoding the
+                                         token.
+            :raise InvalidAudienceError: If the given audience is not specified in the token's audience claim, or no
+                                         audience is given when verifying a token with an audience claim, or the given
+                                         audience is not a string, an iterable, or `None`.
+            :raise InvalidClaimSetError: If the claim set does not contain exactly the expected (non-optional) claims.
+            :raise InvalidClassError: If the claim set is not verified with the class with which the token has been
+                                      created.
+            :raise InvalidIssuedAtError: If the claim set contains an issued-at date ``iat`` that is not an integer.
+            :raise InvalidIssuerError: If the token has been issued by a different issuer than given.
+            :raise InvalidSignatureError: If the token's signature does not validate the token's contents.
+            :raise UnspecifiedClassError: If the claim set does not contain the class with which the token has been
+                                          created.
+            :raise UnsupportedAlgorithmError: If the algorithm used for encoding the token is not supported.
+            :raise VerificationError: If a general error occurred during decoding.
+        """
+
+        if key is None:
+            key = cls._get_config_key()
+
+        return super().verify(token, key, issuer, audience)
+
+    # endregion
+
+    # region Configuration Values
+
+    @staticmethod
+    def _get_config_expiration_date() -> Optional[datetime]:
+        """
+            Get the expiration date based on the token's validity defined in the current Flask app's configuration.
+
+            The token's validity is read from the configuration key `EASYJWT_TOKEN_VALIDITY`. The value can either be
+            a string castable to an integer, an integer (both interpreted in seconds), or a `datetime.timedelta`
+            object.
+
+            :return: `None` if no token validity is defined in the application's configuration or if the value has a
+                     wrong type. A `datetime` object otherwise, in UTC and the defined amount of time from now.
         """
 
         # If no token validity is defined, the token won't have an expiration date.
-        validity = self._application.config[_CONFIGURATION_TOKEN_VALIDITY]
+        validity = current_app.config.get('EASYJWT_TOKEN_VALIDITY', None)
         if validity is None:
             return None
 
@@ -70,7 +150,7 @@ class FlaskEasyJWT(object):
             except ValueError:
                 # If the string cannot be parsed to an integer, the validity is invalid.
                 # In this case, let the validity as is; the following checks will fail as well,
-                # and thus, a warning will be issued.
+                # and thus, a warning will be issued without having to duplicate the warning code.
                 pass
 
         # If the validity is specified as an integer or has been parsed to one, convert it to a timedelta object.
@@ -79,63 +159,34 @@ class FlaskEasyJWT(object):
 
         # If the validity still is not a timedelta object, issue a warning.
         if not isinstance(validity, timedelta):
-            warn(f'{_CONFIGURATION_TOKEN_VALIDITY} must be an int, a string castable to an int, or datetime.timedelta.')
+            warn('EASYJWT_TOKEN_VALIDITY must be an int, a string castable to an int, or a datetime.timedelta.')
             return None
 
         # The expiration date of the token is the given amount of time from now.
-        return datetime.utcnow() + validity
+        return datetime.utcnow().replace(microsecond=0) + validity
 
-    @property
-    def key(self) -> Optional[str]:
+    @staticmethod
+    def _get_config_key() -> Optional[str]:
         """
-            Get the key for encrypting and decrypting tokens.
+            Get the key for encrypting and decrypting tokens from the current Flask app's configuration.
 
             If the application does not define a key, a warning will be issued.
 
             :return: The key defined in the application's configuration. `None` if none is set.
         """
 
-        key = self._application.config[_CONFIGURATION_KEY]
-        if key is None:
-            warn(f'No key set, token will not be encrypted. Set {_CONFIGURATION_KEY}.')
-            return None
+        # If there is a key defined in the EasyJWT configuration key, use this. Otherwise, fall back to the app' secret
+        # key.
+        key = current_app.config.get('EASYJWT_KEY', None)
+        if key is not None:
+            return key
 
-        return key
+        # Fall back to the application's secret key.
+        key = current_app.config.get('SECRET_KEY', None)
+        if key is not None:
+            return key
 
-    # endregion
-
-    # region Initialization
-
-    def __init__(self, application: Optional[Flask] = None) -> None:
-        """
-            :param application: Optionally, the application that will be initialized. The application can also later be
-                                initialized with :meth:`.init_app`.
-        """
-
-        # Initialize the application if given.
-        self._explicit_application = application
-        if application is not None:
-            self.init_app(application)
-
-    def init_app(self, application: Flask) -> None:
-        """
-            Initialize the application for the use with Flask-EasyJWT.
-
-            :param application: The application that will be initialized.
-        """
-
-        application.extensions['easyjwt'] = self
-
-        # Fall back to the secret key of the application.
-        configuration_secret_key = 'SECRET_KEY'
-        secret_key = application.config.get(configuration_secret_key, None)
-
-        # Set configuration defaults.
-        application.config.setdefault(_CONFIGURATION_KEY, secret_key)
-        application.config.setdefault(_CONFIGURATION_TOKEN_VALIDITY, None)
-
-        # Warn if there is no key set.
-        if application.config[_CONFIGURATION_KEY] is None:
-            warn(f'No key set for encrypting tokens. Set {configuration_secret_key} or {_CONFIGURATION_KEY}.')
+        warn('No key set for encrypting tokens. Set EASYJWT_KEY or SECRET_KEY. Token will not be encrypted.')
+        return None
 
     # endregion
