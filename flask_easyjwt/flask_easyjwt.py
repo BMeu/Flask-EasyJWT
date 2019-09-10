@@ -91,7 +91,7 @@ class FlaskEasyJWT(EasyJWT):
 
             :param token: The JWT to verify.
             :param key: The key used for decoding the token. This key must be the same with which the token has been
-                        created.
+                        created. If left empty, the key set in the application's configuration will be used.
             :param issuer: The issuer of the token to verify.
             :param audience: The audience for which the token is intended.
             :return: The object representing the token. The claim values are set on the corresponding instance
