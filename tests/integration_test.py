@@ -33,7 +33,7 @@ class IntegrationTest(TestCase):
         application = Flask(__name__)
         application.config.from_mapping(
             EASYJWT_KEY=self.easyjwt_key,
-            EASYJWT_VALIDITY=self.validity,
+            EASYJWT_TOKEN_VALIDITY=self.validity,
             SECRET_KEY=self.secret_key,
         )
 
