@@ -26,15 +26,15 @@ class FlaskEasyJWT(EasyJWT):
         To use a JWT, you have to create a subclass inheriting from :class:`FlaskEasyJWT`. All public instance variables
         of this class (that is, all instance variables not starting with an underscore) will make up the claim set of
         your token (there will be a few meta claims in the token as well that :class:`FlaskEasyJWT` needs to verify the
-        token). For details, see the documentation of `EasyJWT <https://easyjwt.readthedocs.io/en/latest/>`_.
+        token). For details, see the documentation of `EasyJWT <https://easyjwt.readthedocs.io/en/latest/>`__.
 
         :class:`FlaskEasyJWT` simplifies the usage of `EasyJWT` in Flask applications by allowing to specify a few
         common settings in the application's configuration:
 
-        * The key used for encoding and decoding a token can be specified in the configuration key `EASYJWT_KEY`.
-        * The validity of a token can be specified in the configuration key `EASYJWT_TOKEN_VALIDITY`. The expiration
-          date will be set at the time of creation of a token to the current time plus the specified duration (in
-          seconds).
+        * The key used for encoding and decoding a token can be specified in the configuration key :attr:`EASYJWT_KEY`.
+        * The validity of a token can be specified in the configuration key :attr:`EASYJWT_TOKEN_VALIDITY`. The
+          expiration date will be set at the time of creation of a token to the current time plus the specified duration
+          (in seconds).
     """
 
     # region Initialization
