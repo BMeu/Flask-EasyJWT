@@ -1,5 +1,5 @@
 .. mdinclude:: ../../README.md
-    :end-line: 14
+    :end-line: 53
 
 .. contents:: Contents
     :backlinks: none
@@ -7,7 +7,7 @@
     :local:
 
 .. mdinclude:: ../../README.md
-    :start-line: 15
+    :start-line: 54
     :end-line: -6
 
 Table of Contents
