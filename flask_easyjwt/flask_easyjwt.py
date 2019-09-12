@@ -45,6 +45,8 @@ class FlaskEasyJWT(EasyJWT):
                         the key defined in the application's configuration will be used. Defaults to `None`.
         """
 
+        self.expiration_date: Optional[datetime]
+
         if key is None:
             key = self._get_config_key()
 
@@ -73,7 +75,8 @@ class FlaskEasyJWT(EasyJWT):
         if self.expiration_date is None:
             self.expiration_date = self._get_config_expiration_date()
 
-        return super().create(issued_at)
+        token: str = super().create(issued_at)
+        return token
 
     # endregion
 
@@ -177,7 +180,7 @@ class FlaskEasyJWT(EasyJWT):
 
         # If there is a key defined in the EasyJWT configuration key, use this. Otherwise, fall back to the app' secret
         # key.
-        key = current_app.config.get('EASYJWT_KEY', None)
+        key: Optional[str] = current_app.config.get('EASYJWT_KEY', None)
         if key is not None:
             return key
 
