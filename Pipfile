@@ -8,6 +8,7 @@ coverage = "*"
 flake8 = "*"
 m2r = "*"
 sphinx = "*"
+mypy = "*"
 
 [packages]
 easyjwt = "~=0.1"
