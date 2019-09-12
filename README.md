@@ -71,7 +71,7 @@ For a full list of features, see [the features of EasyJWT](https://easyjwt.readt
 
 Flask-EasyJWT requires Python 3.6 or newer.
 
-Flask-EasyJWT is available [on PyPI](https://pypi.org/project/flask_easyjwt/). You can install it using your favorite
+Flask-EasyJWT will be available [on PyPI](https://pypi.org/project/flask_easyjwt/). You can install it using your favorite
 package manager.
 
  * PIP:
