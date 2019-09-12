@@ -13,6 +13,3 @@ mypy = "*"
 [packages]
 easyjwt = "~=0.1"
 flask = "~=1.0"
-
-[requires]
-python_version = "3.6"
