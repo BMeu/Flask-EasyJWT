@@ -7,8 +7,8 @@ verify_ssl = true
 coverage = "*"
 flake8 = "*"
 m2r = "*"
-sphinx = "*"
 mypy = "*"
+sphinx = "*"
 
 [packages]
 easyjwt = "~=0.1"
