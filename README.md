@@ -1,8 +1,12 @@
 # Flask-EasyJWT
 
+
+[![PyPI](https://img.shields.io/pypi/v/flask_easyjwt.svg)](https://pypi.org/project/flask_easyjwt/)
+[![PyPI - License](https://img.shields.io/pypi/l/flask_easyjwt.svg)](https://github.com/BMeu/Flask-EasyJWT/blob/master/LICENSE)
 [![Build Status](https://travis-ci.org/BMeu/Flask-EasyJWT.svg?branch=master)](https://travis-ci.org/BMeu/Flask-EasyJWT)
 [![codecov](https://codecov.io/gh/BMeu/Flask-EasyJWT/branch/master/graph/badge.svg)](https://codecov.io/gh/BMeu/Flask-EasyJWT)
 [![Documentation Status](https://readthedocs.org/projects/flask-easyjwt/badge/?version=latest)](https://flask-easyjwt.readthedocs.io/en/latest/?badge=latest)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flask_easyjwt.svg)
 
 Flask-EasyJWT provides a simple interface to creating and verifying
 [JSON Web Tokens (JWTs)](https://tools.ietf.org/html/rfc7519) in Python. It allows you to once define the claims of the
@@ -71,7 +75,7 @@ For a full list of features, see [the features of EasyJWT](https://easyjwt.readt
 
 Flask-EasyJWT requires Python 3.6 or newer.
 
-Flask-EasyJWT will be available [on PyPI](https://pypi.org/project/flask_easyjwt/). You can install it using your favorite
+Flask-EasyJWT is available [on PyPI](https://pypi.org/project/flask_easyjwt/). You can install it using your favorite
 package manager.
 
  * PIP:
