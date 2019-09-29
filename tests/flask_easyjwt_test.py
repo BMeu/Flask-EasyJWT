@@ -8,10 +8,11 @@ from unittest.mock import patch
 from datetime import datetime
 from datetime import timedelta
 
-from easyjwt import InvalidSignatureError
 from flask import Flask
 
+from flask_easyjwt import EasyJWTError
 from flask_easyjwt import FlaskEasyJWT
+from flask_easyjwt import InvalidSignatureError
 
 
 # noinspection DuplicatedCode
@@ -283,21 +284,18 @@ class FlaskEasyJWTTest(TestCase):
         warning = 'must be an int, a string castable to an int, or a datetime.timedelta'
         self.assertIn(warning, mock_warn.call_args_list[0][0][0])
 
-    @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_key_easyjwt(self, mock_warn: MagicMock):
+    def test_get_config_key_easyjwt(self):
         """
             Test getting the key from the EASYJWT_KEY configuration key.
 
-            Expected Result: The EasyJWT key is returned. No warning is issued.
+            Expected Result: The EasyJWT key is returned.
         """
 
         key = FlaskEasyJWT._get_config_key()
 
         self.assertEqual(self.easyjwt_key, key)
-        mock_warn.assert_not_called()
 
-    @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_key_no_app(self, mock_warn: MagicMock):
+    def test_get_config_key_no_app(self):
         """
             Test getting the key if called outside an app context.
 
@@ -311,36 +309,32 @@ class FlaskEasyJWTTest(TestCase):
 
         message = 'Working outside of application context.'
         self.assertIn(message, str(exception_cm.exception))
-        mock_warn.assert_not_called()
 
         # Push the app context again so that the tear down method will have something to pop.
         self.app_context.push()
 
-    @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_key_none(self, mock_warn: MagicMock):
+    def test_get_config_key_none(self):
         """
             Test getting the key if none is set.
 
-            Expected Result: `None` is returned. A warning is issued.
+            Expected Result: An error is raised.
         """
 
         del self.app.config['EASYJWT_KEY']
         del self.app.config['SECRET_KEY']
 
-        key = FlaskEasyJWT._get_config_key()
+        with self.assertRaises(EasyJWTError) as exception_cm:
+            key = FlaskEasyJWT._get_config_key()
+            self.assertIsNone(key)
 
-        self.assertIsNone(key)
-        mock_warn.assert_called_once()
+        message = 'No key set for encrypting tokens.'
+        self.assertIn(message, str(exception_cm.exception))
 
-        warning = 'No key set for encrypting tokens.'
-        self.assertIn(warning, mock_warn.call_args_list[0][0][0])
-
-    @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_key_secret(self, mock_warn: MagicMock):
+    def test_get_config_key_secret(self):
         """
             Test getting the key from the SECRET_KEY configuration key if EASYJWT_KEY is not configured.
 
-            Expected Result: The secret key is returned. No warning is issued.
+            Expected Result: The secret key is returned.
         """
 
         del self.app.config['EASYJWT_KEY']
@@ -348,6 +342,5 @@ class FlaskEasyJWTTest(TestCase):
         key = FlaskEasyJWT._get_config_key()
 
         self.assertEqual(self.secret_key, key)
-        mock_warn.assert_not_called()
 
     # endregion

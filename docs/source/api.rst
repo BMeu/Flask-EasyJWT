@@ -106,3 +106,10 @@ that some error classes may also listed below `Creation Errors`_.
 .. autoexception:: flask_easyjwt.UnsupportedAlgorithmError
     :members:
     :show-inheritance:
+
+Types
+-----
+
+This section lists the types defined by |project|.
+
+.. autodata:: flask_easyjwt.flask_easyjwt.FlaskEasyJWTClass

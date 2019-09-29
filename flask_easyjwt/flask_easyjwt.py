@@ -5,9 +5,11 @@
     Definition of the token base class for use in Flask applications.
 """
 
+from typing import cast
 from typing import Iterable
 from typing import Optional
 from typing import Type
+from typing import TypeVar
 from typing import Union
 
 from datetime import datetime
@@ -15,8 +17,13 @@ from datetime import timedelta
 from warnings import warn
 
 from easyjwt import EasyJWT
-from easyjwt import EasyJWTClass
+from easyjwt import EasyJWTError
 from flask import current_app
+
+FlaskEasyJWTClass = TypeVar('FlaskEasyJWTClass', bound='FlaskEasyJWT', covariant=True)
+"""
+    The type of the :class:`.FlaskEasyJWT` class, allowing subclasses.
+"""
 
 
 class FlaskEasyJWT(EasyJWT):
@@ -43,6 +50,7 @@ class FlaskEasyJWT(EasyJWT):
         """
             :param key: If set, the given string will be used to encrypt tokens when they are created. If not given,
                         the key defined in the application's configuration will be used. Defaults to `None`.
+            :raise EasyJWTError: If no key is given and there is no key defined in the application's configuration.
         """
 
         self.expiration_date: Optional[datetime]
@@ -83,12 +91,12 @@ class FlaskEasyJWT(EasyJWT):
     # region Verification
 
     @classmethod
-    def verify(cls: Type['FlaskEasyJWT'],
+    def verify(cls: Type[FlaskEasyJWTClass],
                token: str,
                key: Optional[str] = None,
                issuer: Optional[str] = None,
                audience: Optional[Union[Iterable[str], str]] = None
-               ) -> EasyJWTClass:
+               ) -> FlaskEasyJWTClass:
         """
             Verify the given JSON Web Token.
 
@@ -99,6 +107,7 @@ class FlaskEasyJWT(EasyJWT):
             :param audience: The audience for which the token is intended.
             :return: The object representing the token. The claim values are set on the corresponding instance
                      variables.
+            :raise EasyJWTError: If no key is given and there is no key defined in the application's configuration.
             :raise ExpiredTokenError: If the claim set contains an expiration date claim ``exp`` that has passed.
             :raise ImmatureTokenError: If the claim set contains a not-before date claim ``nbf`` that has not yet been
                                        reached.
@@ -122,7 +131,7 @@ class FlaskEasyJWT(EasyJWT):
         if key is None:
             key = cls._get_config_key()
 
-        return super().verify(token, key, issuer, audience)
+        return cast(FlaskEasyJWTClass, super().verify(token, key, issuer, audience))
 
     # endregion
 
@@ -169,13 +178,12 @@ class FlaskEasyJWT(EasyJWT):
         return datetime.utcnow().replace(microsecond=0) + validity
 
     @staticmethod
-    def _get_config_key() -> Optional[str]:
+    def _get_config_key() -> str:
         """
             Get the key for encrypting and decrypting tokens from the current Flask app's configuration.
 
-            If the application does not define a key, a warning will be issued.
-
             :return: The key defined in the application's configuration. `None` if none is set.
+            :raise EasyJWTError: If there is no key defined in the application's configuration.
         """
 
         # If there is a key defined in the EasyJWT configuration key, use this. Otherwise, fall back to the app' secret
@@ -189,7 +197,6 @@ class FlaskEasyJWT(EasyJWT):
         if key is not None:
             return key
 
-        warn('No key set for encrypting tokens. Set EASYJWT_KEY or SECRET_KEY. Token will not be encrypted.')
-        return None
+        raise EasyJWTError('No key set for encrypting tokens. Set EASYJWT_KEY or SECRET_KEY.')
 
     # endregion
