@@ -138,16 +138,18 @@ class FlaskEasyJWT(EasyJWT):
     # region Configuration Values
 
     @staticmethod
-    def _get_config_expiration_date() -> Optional[datetime]:
+    def get_validity() -> Optional[timedelta]:
         """
-            Get the expiration date based on the token's validity defined in the current Flask app's configuration.
+            Get the token's validity from the configuration of the current Flask application.
 
             The token's validity is read from the configuration key `EASYJWT_TOKEN_VALIDITY`. The value can either be
             a string castable to an integer, an integer (both interpreted in seconds), or a `datetime.timedelta`
             object.
 
+            This method must be executed within the application context.
+
             :return: `None` if no token validity is defined in the application's configuration or if the value has a
-                     wrong type. A `datetime` object otherwise, in UTC and the defined amount of time from now.
+                     wrong type.
         """
 
         # If no token validity is defined, the token won't have an expiration date.
@@ -172,6 +174,21 @@ class FlaskEasyJWT(EasyJWT):
         # If the validity still is not a timedelta object, issue a warning.
         if not isinstance(validity, timedelta):
             warn('EASYJWT_TOKEN_VALIDITY must be an int, a string castable to an int, or a datetime.timedelta.')
+            return None
+
+        return validity
+
+    @classmethod
+    def _get_config_expiration_date(cls) -> Optional[datetime]:
+        """
+            Get the expiration date based on the token's validity defined in the current Flask app's configuration.
+
+            :return: `None` if no token validity is defined in the application's configuration or if the value has a
+                     wrong type. A `datetime` object otherwise, in UTC and the defined amount of time from now.
+        """
+
+        validity = cls.get_validity()
+        if validity is None:
             return None
 
         # The expiration date of the token is the given amount of time from now.

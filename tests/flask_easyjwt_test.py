@@ -163,63 +163,46 @@ class FlaskEasyJWTTest(TestCase):
     # region Configuration Values
 
     @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_expiration_date_timedelta(self, mock_warn: MagicMock):
+    def test_get_validity_timedelta(self, mock_warn: MagicMock):
         """
-            Test getting the expiration date if the validity is configured as a `timedelta` object.
+            Test getting the validity if it is configured as a `timedelta` object.
 
-            Expected Result: The token's validity is the defined amount of time away from now. No warning is issued.
+            Expected Result: The token's validity as defined in the configuration. No warning is issued.
         """
 
         self.app.config['EASYJWT_TOKEN_VALIDITY'] = timedelta(minutes=self.validity)
 
-        # The returned expiration date is 15 minutes from now. To check the date, get the current time plus 15 minutes,
-        # and get the time plus 15 minutes after getting the expiration date. The expiration date should then be between
-        # those two times.
-        lower_bound = datetime.utcnow().replace(microsecond=0) + timedelta(minutes=self.validity)
-        expiration_date = FlaskEasyJWT._get_config_expiration_date()
-        upper_bound = datetime.utcnow().replace(microsecond=0) + timedelta(minutes=self.validity)
-
-        self.assertIsNotNone(expiration_date)
-        self.assertGreaterEqual(expiration_date, lower_bound)
-        self.assertLessEqual(expiration_date, upper_bound)
+        validity = FlaskEasyJWT.get_validity()
+        self.assertEqual(self.app.config['EASYJWT_TOKEN_VALIDITY'], validity)
         mock_warn.assert_not_called()
 
     @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_expiration_date_integer(self, mock_warn: MagicMock):
+    def test_get_validity_integer(self, mock_warn: MagicMock):
         """
-            Test getting the expiration date if the validity is configured as an integer.
+            Test getting the validity if it is configured as an integer.
 
-            Expected Result: The token's validity is the defined amount of time away from now. No warning is issued.
+            Expected Result: The token's validity as defined in the configuration. No warning is issued.
         """
 
         # The validity is interpreted in seconds when parsed from an integer.
-        validity = self.validity * 60
-        self.app.config['EASYJWT_TOKEN_VALIDITY'] = validity
+        self.app.config['EASYJWT_TOKEN_VALIDITY'] = self.validity * 60
 
-        # The returned expiration date is 15 minutes from now. To check the date, get the current time plus 15 minutes,
-        # and get the time plus 15 minutes after getting the expiration date. The expiration date should then be between
-        # those two times.
-        lower_bound = datetime.utcnow().replace(microsecond=0) + timedelta(seconds=validity)
-        expiration_date = FlaskEasyJWT._get_config_expiration_date()
-        upper_bound = datetime.utcnow().replace(microsecond=0) + timedelta(seconds=validity)
-
-        self.assertIsNotNone(expiration_date)
-        self.assertGreaterEqual(expiration_date, lower_bound)
-        self.assertLessEqual(expiration_date, upper_bound)
+        validity = FlaskEasyJWT.get_validity()
+        self.assertEqual(timedelta(seconds=self.app.config['EASYJWT_TOKEN_VALIDITY']), validity)
         mock_warn.assert_not_called()
 
     @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_expiration_date_no_app(self, mock_warn: MagicMock):
+    def test_get_validity_no_app(self, mock_warn: MagicMock):
         """
-            Test getting the expiration date if called outside an app context.
+            Test getting the validity if called outside an app context.
 
             Expected Result: A runtime error is thrown.
         """
 
         self.app_context.pop()
         with self.assertRaises(RuntimeError) as exception_cm:
-            expiration_date = FlaskEasyJWT._get_config_expiration_date()
-            self.assertIsNone(expiration_date)
+            validity = FlaskEasyJWT.get_validity()
+            self.assertIsNone(validity)
 
         message = 'Working outside of application context.'
         self.assertIn(message, str(exception_cm.exception))
@@ -229,9 +212,9 @@ class FlaskEasyJWTTest(TestCase):
         self.app_context.push()
 
     @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_expiration_date_none(self, mock_warn: MagicMock):
+    def test_get_validity_none(self, mock_warn: MagicMock):
         """
-            Test getting the expiration date if none is set in the configuration.
+            Test getting the validity if none is set in the configuration.
 
             Expected Result: `None` is returned. No warning is issued.
         """
@@ -239,50 +222,73 @@ class FlaskEasyJWTTest(TestCase):
         with self.assertRaises(KeyError):
             self.assertIsNone(self.app.config['EASYJWT_TOKEN_VALIDITY'])
 
-        self.assertIsNone(FlaskEasyJWT._get_config_expiration_date())
+        self.assertIsNone(FlaskEasyJWT.get_validity())
         mock_warn.assert_not_called()
 
     @patch('flask_easyjwt.flask_easyjwt.warn')
-    def test_get_config_expiration_date_string_parsable(self, mock_warn: MagicMock):
+    def test_get_validity_string_parsable(self, mock_warn: MagicMock):
         """
-            Test getting the expiration date if the validity is configured as a string that can be parsed to an integer.
+            Test getting the validity if it is configured as a string that can be parsed to an integer.
 
-            Expected Result: The token's validity is the defined amount of time away from now. No warning is issued.
+            Expected Result: The token's validity as defined in the configuration. No warning is issued.
         """
 
         # The validity is interpreted in seconds when parsed from a string.
-        validity = self.validity * 60
-        self.app.config['EASYJWT_TOKEN_VALIDITY'] = str(validity)
+        self.app.config['EASYJWT_TOKEN_VALIDITY'] = str(self.validity * 60)
 
-        # The returned expiration date is 15 minutes from now. To check the date, get the current time plus 15 minutes,
-        # and get the time plus 15 minutes after getting the expiration date. The expiration date should then be between
-        # those two times.
-        lower_bound = datetime.utcnow().replace(microsecond=0) + timedelta(seconds=validity)
-        expiration_date = FlaskEasyJWT._get_config_expiration_date()
-        upper_bound = datetime.utcnow().replace(microsecond=0) + timedelta(seconds=validity)
-
-        self.assertIsNotNone(expiration_date)
-        self.assertGreaterEqual(expiration_date, lower_bound)
-        self.assertLessEqual(expiration_date, upper_bound)
+        validity = FlaskEasyJWT.get_validity()
+        self.assertEqual(timedelta(seconds=int(self.app.config['EASYJWT_TOKEN_VALIDITY'])), validity)
         mock_warn.assert_not_called()
 
     @patch('flask_easyjwt.flask_easyjwt.warn')
     def test_get_config_expiration_date_string_unparsable(self, mock_warn: MagicMock):
         """
-            Test getting the expiration date if the validity is configured as a string that cannot be parsed to an
-            integer.
+            Test getting the validity if it is configured as a string that cannot be parsed to an integer.
 
             Expected Result: `None` is returned. A warning is issued.
         """
 
         self.app.config['EASYJWT_TOKEN_VALIDITY'] = '15 minutes'
 
-        expiration_date = FlaskEasyJWT._get_config_expiration_date()
+        expiration_date = FlaskEasyJWT.get_validity()
         self.assertIsNone(expiration_date)
         mock_warn.assert_called_once()
 
         warning = 'must be an int, a string castable to an int, or a datetime.timedelta'
         self.assertIn(warning, mock_warn.call_args_list[0][0][0])
+
+    def test_get_expiration_date_no_validity(self):
+        """
+            Test getting the expiration date if no validity is defined in the application's configuration.
+
+            Expected Result: `None` is returned.
+        """
+
+        with self.assertRaises(KeyError):
+            self.assertIsNone(self.app.config['EASYJWT_TOKEN_VALIDITY'])
+
+        self.assertIsNone(FlaskEasyJWT._get_config_expiration_date())
+
+    def test_get_expiration_date_validity(self):
+        """
+            Test getting the expiration date if the validity is set in the application's configuration.
+
+            Expected Result: The expiration date is the defined amount of time from now.
+        """
+
+        validity = timedelta(minutes=self.validity)
+        self.app.config['EASYJWT_TOKEN_VALIDITY'] = validity
+
+        # The returned expiration date is 15 minutes from now. To check the date, get the current time plus 15 minutes,
+        # and get the time plus 15 minutes after getting the expiration date. The expiration date should then be between
+        # those two times.
+        lower_bound = datetime.utcnow().replace(microsecond=0) + validity
+        expiration_date = FlaskEasyJWT._get_config_expiration_date()
+        upper_bound = datetime.utcnow().replace(microsecond=0) + validity
+
+        self.assertIsNotNone(expiration_date)
+        self.assertGreaterEqual(expiration_date, lower_bound)
+        self.assertLessEqual(expiration_date, upper_bound)
 
     def test_get_config_key_easyjwt(self):
         """
