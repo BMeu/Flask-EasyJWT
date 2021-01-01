@@ -6,12 +6,12 @@ with open('README.md', 'r') as readme:
 
 setup(
     name='flask_easyjwt',
-    version='0.2.1',
+    version='0.2.2',
     packages=find_packages(exclude=['docs', 'tests*']),
 
     python_requires='>=3.6',
     install_requires=[
-        'easyjwt==0.1.*',
+        'easyjwt==0.2.*',
         'Flask>=1.0',
     ],
 
@@ -40,6 +40,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Internet',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules',
