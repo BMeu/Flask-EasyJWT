@@ -11,6 +11,10 @@ Possible log types:
 * `[fixed]` for any bug fixes.
 * `[security]` to invite users to upgrade in case of vulnerabilities.
 
+## 0.2.1 (January 1<sup>st</sup>, 2021)
+
+ * `[fixed]` Updated dependency of EasyJWT.
+
 ## 0.2.0 (September 30<sup>th</sup>, 2019)
 
  * `[added]` Method `get_validity()` to return the validity of a token.
