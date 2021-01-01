@@ -11,5 +11,5 @@ mypy = "*"
 sphinx = "*"
 
 [packages]
-easyjwt = "~=0.1"
+easyjwt = "~=0.2"
 flask = "~=1.0"
